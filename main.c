@@ -24,6 +24,18 @@ int analyze(struct info inf) {
 	int softirq = inf.values[6];
 	return (idle*100) / (user + nice + system + idle + iowait + irq + softirq);
 }
+/*there are 3 threads
+reading thread
+analyzing thread
+printing thread
+
+reading thread reads infos to buffer which uses analyzing thread
+
+analyzing thread takes from buffer which reading thread is writing to
+and puts percentages to buffer which uses printing thread
+
+printing thread prints from buffer to which analyzing thread writes to
+*/
 /*reader -> analyzer communication using array of info*/
 struct info infoVector[100]; int infoVectorSize = 0;
 pthread_mutex_t infos = PTHREAD_MUTEX_INITIALIZER;
