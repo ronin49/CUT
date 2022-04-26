@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <pthread.h>
 struct info {
 	size_t values[7];
 };
@@ -10,6 +11,9 @@ struct info read(){
 	fclose(f);
 	return inf;
 }
+void print(int idle) {
+	printf("idle: %ld\n", idle);
+}
 int analyze(struct info inf) {
 	int user = inf.values[0];
 	int nice = inf.values[1];
@@ -18,11 +22,31 @@ int analyze(struct info inf) {
 	int iowait = inf.values[4];
 	int irq = inf.values[5];
 	int softirq = inf.values[6];
-	return (idle*100) / (user + nice + system + idle + iowait + irq + softirq);
+	print((idle*100) / (user + nice + system + idle + iowait + irq + softirq));
 }
-void print(int idle) {
-	printf("idle: %ld\n", idle);
+struct info infoVector[100]; int infoVectorSize = 0;
+pthread_mutex_t infos = PTHREAD_MUTEX_INITIALIZER;
+void *readerThread(){
+	for(;;){
+		if(infoVectorSize<100) {
+			pthread_mutex_lock(&infos);
+			infoVector[infoVectorSize++] = read();
+			pthread_mutex_unlock(&infos);
+		}
+	}
+}
+void *analyzerThread(){
+	for(;;){
+		if(infoVectorSize>0) {
+			pthread_mutex_lock(&infos);
+			analyze(infoVector[infoVectorSize--]);
+			pthread_mutex_unlock(&infos);
+		}
+	}
 }
 int main(){
-	print(analyze(read()));
+pthread_t reader; pthread_create(&reader,NULL,readerThread,NULL);
+pthread_t analyzer; pthread_create(&analyzer,NULL,analyzerThread,NULL);
+pthread_join(reader,NULL);
+pthread_join(analyzer,NULL);
 }
