@@ -43,19 +43,19 @@ void *analyzerThread(){
 	for(;;){
 		if(infoVectorSize>0 && percentVectorSize < 100) {
 			pthread_mutex_lock(&infos);
-			pthread_mutex_lock(&percentages);
+			pthread_mutex_lock(&percents);
 			percentVector[percentVectorSize++] = analyze(infoVector[infoVectorSize--]);
-			pthread_mutex_unlock(&percentages);
+			pthread_mutex_unlock(&percents);
 			pthread_mutex_unlock(&infos);
 		}
 	}
 }
 void *printerThread(){
 	for(;;){
-		if(percentVectorSize<100) {
-			pthread_mutex_lock(&percentages);
+		if(percentVectorSize>0) {
+			pthread_mutex_lock(&percents);
 			print(percentVector[percentVectorSize--]);
-			pthread_mutex_unlock(&percentages);
+			pthread_mutex_unlock(&percents);
 		}
 	}
 }
