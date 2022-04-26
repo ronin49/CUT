@@ -11,9 +11,6 @@ struct info read(){
 	fclose(f);
 	return inf;
 }
-void print(int idle) {
-	printf("idle: %ld\n", idle);
-}
 int analyze(struct info inf) {
 	int user = inf.values[0];
 	int nice = inf.values[1];
@@ -24,18 +21,21 @@ int analyze(struct info inf) {
 	int softirq = inf.values[6];
 	return (idle*100) / (user + nice + system + idle + iowait + irq + softirq);
 }
+void print(int idle) {
+	printf("idle: %d\n", idle);
+}
 /*there are 3 threads
-reading thread
-analyzing thread
-printing thread
+  reading thread
+  analyzing thread
+  printing thread
 
-reading thread reads infos to buffer which uses analyzing thread
+  reading thread reads infos to buffer which uses analyzing thread
 
-analyzing thread takes from buffer which reading thread is writing to
-and puts percentages to buffer which uses printing thread
+  analyzing thread takes from buffer which reading thread is writing to
+  and puts percentages to buffer which uses printing thread
 
-printing thread prints from buffer to which analyzing thread writes to
-*/
+  printing thread prints from buffer to which analyzing thread writes to
+ */
 /*reader -> analyzer communication using array of info*/
 struct info infoVector[100]; int infoVectorSize = 0;
 pthread_mutex_t infos = PTHREAD_MUTEX_INITIALIZER;
@@ -72,10 +72,10 @@ void *printerThread(){
 	}
 }
 int main(){
-pthread_t reader; pthread_create(&reader,NULL,readerThread,NULL);
-pthread_t analyzer; pthread_create(&analyzer,NULL,analyzerThread,NULL);
-pthread_t printer; pthread_create(&printer,NULL,printerThread,NULL);
-pthread_join(printer,NULL);
-pthread_join(reader,NULL);
-pthread_join(analyzer,NULL);
+	pthread_t reader; pthread_create(&reader,NULL,readerThread,NULL);
+	pthread_t analyzer; pthread_create(&analyzer,NULL,analyzerThread,NULL);
+	pthread_t printer; pthread_create(&printer,NULL,printerThread,NULL);
+	pthread_join(printer,NULL);
+	pthread_join(reader,NULL);
+	pthread_join(analyzer,NULL);
 }
