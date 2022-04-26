@@ -20,8 +20,9 @@ int analyze(struct info inf) {
 	int softirq = inf.values[6];
 	return (idle*100) / (user + nice + system + idle + iowait + irq + softirq);
 }
+void print(int idle) {
+	printf("idle: %ld\n", idle);
+}
 int main(){
-	struct info inf = read();
-	printf("%ld %ld %ld %ld %ld %ld %ld\n",inf.values[0],inf.values[1],inf.values[2],inf.values[3],inf.values[4],inf.values[5],inf.values[6]);
-	printf("idle: %ld", analyze(inf));
+	print(analyze(read()));
 }
