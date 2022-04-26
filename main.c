@@ -22,10 +22,14 @@ int analyze(struct info inf) {
 	int iowait = inf.values[4];
 	int irq = inf.values[5];
 	int softirq = inf.values[6];
-	print((idle*100) / (user + nice + system + idle + iowait + irq + softirq));
+	return (idle*100) / (user + nice + system + idle + iowait + irq + softirq);
 }
+/*reader -> analyzer communication using array of info*/
 struct info infoVector[100]; int infoVectorSize = 0;
 pthread_mutex_t infos = PTHREAD_MUTEX_INITIALIZER;
+/*analyzer -> printer communication using array of percentages*/
+int percentVector[100]; int percentVectorSize = 0;
+pthread_mutex_t percents = PTHREAD_MUTEX_INITIALIZER;
 void *readerThread(){
 	for(;;){
 		if(infoVectorSize<100) {
@@ -37,16 +41,29 @@ void *readerThread(){
 }
 void *analyzerThread(){
 	for(;;){
-		if(infoVectorSize>0) {
+		if(infoVectorSize>0 && percentVectorSize < 100) {
 			pthread_mutex_lock(&infos);
-			analyze(infoVector[infoVectorSize--]);
+			pthread_mutex_lock(&percentages);
+			percentVector[percentVectorSize++] = analyze(infoVector[infoVectorSize--]);
+			pthread_mutex_unlock(&percentages);
 			pthread_mutex_unlock(&infos);
+		}
+	}
+}
+void *printerThread(){
+	for(;;){
+		if(percentVectorSize<100) {
+			pthread_mutex_lock(&percentages);
+			print(percentVector[percentVectorSize--]);
+			pthread_mutex_unlock(&percentages);
 		}
 	}
 }
 int main(){
 pthread_t reader; pthread_create(&reader,NULL,readerThread,NULL);
 pthread_t analyzer; pthread_create(&analyzer,NULL,analyzerThread,NULL);
+pthread_t printer; pthread_create(&printer,NULL,printerThread,NULL);
+pthread_join(printer,NULL);
 pthread_join(reader,NULL);
 pthread_join(analyzer,NULL);
 }
